@@ -63,46 +63,23 @@ app.post("/api/session/new", async (req, res) => {
 // Header: Authorization: Bearer <token>
 app.get("/api/inbox", async (req, res) => {
   try {
-    const auth = req.headers.authorization || "";
+    const auth = req.headers.authorization;
+    if (!auth) {
+      return res.status(400).json({ error: "Falta header Authorization" });
+    }
+
     const { data } = await axios.get(`${API}/messages?page=1`, {
       headers: { Authorization: auth },
+      timeout: 15000,
     });
+
     res.json(data);
   } catch (err) {
+    console.error("INBOX ERROR:", err?.response?.status, err?.response?.data || err?.message);
     res.status(500).json({
       error: "No se pudo leer inbox",
       detail: err?.response?.data || err?.message || String(err),
+      status: err?.response?.status || null
     });
   }
-});
-
-// ========= API: Leer un mensaje =========
-// Header: Authorization: Bearer <token>
-app.get("/api/message/:id", async (req, res) => {
-  try {
-    const auth = req.headers.authorization || "";
-    const { id } = req.params;
-    const { data } = await axios.get(`${API}/messages/${id}`, {
-      headers: { Authorization: auth },
-    });
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({
-      error: "No se pudo leer el mensaje",
-      detail: err?.response?.data || err?.message || String(err),
-    });
-  }
-});
-
-// ========= API: Regenerar correo =========
-app.post("/api/session/refresh", async (req, res) => {
-  // Por simplicidad: crea uno nuevo igual que /new
-  // (El frontend "olvida" el anterior y reinicia timer)
-  return app._router.handle({ ...req, url: "/api/session/new", method: "POST" }, res, () => {});
-});
-
-// ========= Start =========
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Servidor activo en puerto", PORT);
 });
