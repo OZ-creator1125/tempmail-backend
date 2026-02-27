@@ -48,29 +48,24 @@ app.post("/api/session/new", async (req, res) => {
 });
 
 // Inbox (mail.tm)
-app.get("/api/inbox", async (req, res) => {
+app.get("/api/message/:id", async (req, res) => {
   try {
     const auth = req.headers.authorization;
-    if (!auth) return res.status(400).json({ error: "Falta header Authorization" });
+    if (!auth) return res.status(400).json({ error: "Falta Authorization" });
 
-    const { data } = await axios.get(`${API}/messages?page=1`, {
+    const { id } = req.params;
+
+    const { data } = await axios.get(`${API}/messages/${id}`, {
       headers: { Authorization: auth },
       timeout: 15000,
     });
 
     res.json(data);
   } catch (err) {
-    console.error("INBOX ERROR:", err?.response?.status, err?.response?.data || err?.message);
+    console.error("MESSAGE ERROR:", err?.response?.status, err?.response?.data || err?.message);
     res.status(500).json({
-      error: "No se pudo leer inbox",
-      status: err?.response?.status || null,
+      error: "No se pudo leer mensaje",
       detail: err?.response?.data || err?.message || String(err),
     });
   }
-});
-
-// ---- LISTEN (ESTO ES LO CLAVE) ----
-const PORT = Number(process.env.PORT || 8080);
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Servidor activo en puerto", PORT);
 });
