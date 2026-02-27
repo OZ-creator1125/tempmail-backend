@@ -9,16 +9,16 @@ app.use(express.json());
 
 const API = "https://api.mail.tm";
 
-// --- logs de arranque ---
+// LOGS
 console.log("Booting app...");
 console.log("PORT env =", process.env.PORT);
 
-// Healthcheck
+// HOME / HEALTHCHECK
 app.get("/", (req, res) => {
   res.json({ message: "Backend funcionando correctamente 🚀" });
 });
 
-// Crear sesión real (mail.tm)
+// NEW SESSION
 app.post("/api/session/new", async (req, res) => {
   try {
     const domainsRes = await axios.get(`${API}/domains?page=1`, { timeout: 15000 });
@@ -47,13 +47,35 @@ app.post("/api/session/new", async (req, res) => {
   }
 });
 
-// Inbox (mail.tm)
+// INBOX
+app.get("/api/inbox", async (req, res) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth) return res.status(400).json({ error: "Falta header Authorization" });
+
+    const { data } = await axios.get(`${API}/messages?page=1`, {
+      headers: { Authorization: auth },
+      timeout: 15000,
+    });
+
+    res.json(data);
+  } catch (err) {
+    console.error("INBOX ERROR:", err?.response?.status, err?.response?.data || err?.message);
+    res.status(500).json({
+      error: "No se pudo leer inbox",
+      status: err?.response?.status || null,
+      detail: err?.response?.data || err?.message || String(err),
+    });
+  }
+});
+
+// READ MESSAGE
 app.get("/api/message/:id", async (req, res) => {
   try {
     const auth = req.headers.authorization;
     if (!auth) return res.status(400).json({ error: "Falta Authorization" });
 
-    const { id } = req.params;
+    const id = req.params.id;
 
     const { data } = await axios.get(`${API}/messages/${id}`, {
       headers: { Authorization: auth },
@@ -65,7 +87,14 @@ app.get("/api/message/:id", async (req, res) => {
     console.error("MESSAGE ERROR:", err?.response?.status, err?.response?.data || err?.message);
     res.status(500).json({
       error: "No se pudo leer mensaje",
+      status: err?.response?.status || null,
       detail: err?.response?.data || err?.message || String(err),
     });
   }
+});
+
+// LISTEN (CLAVE)
+const PORT = Number(process.env.PORT || 8080);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("Servidor activo en puerto", PORT);
 });
