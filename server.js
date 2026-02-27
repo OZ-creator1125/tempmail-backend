@@ -14,10 +14,15 @@ console.log("Booting app...");
 console.log("PORT env =", process.env.PORT);
 
 // HOME / HEALTHCHECK
+// HOME / HEALTHCHECK
 app.get("/", (req, res) => {
   res.json({ message: "Backend funcionando correctamente 🚀" });
 });
 
+// NUEVO HEALTH CHECK
+app.get("/health", (req, res) => {
+  res.status(200).send("ok");
+});
 // NEW SESSION
 app.post("/api/session/new", async (req, res) => {
   try {
